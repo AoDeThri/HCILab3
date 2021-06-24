@@ -23,7 +23,7 @@ import {
 import {
   CanvasRenderer
 } from 'echarts/renderers';
-import { result } from 'lodash-es';
+import { max, result } from 'lodash-es';
 
 echarts.use(
   [TitleComponent, TooltipComponent, GridComponent, BarChart, CanvasRenderer, PieChart, LineChart]
@@ -183,7 +183,6 @@ export default connect (({json}) => ({
   const agePieOptions = {
     title: {
       text: 'Age',
-      subtext: 'FUck',
       left: 'center'
     },
     tooltip: {
@@ -212,7 +211,6 @@ export default connect (({json}) => ({
   const genderPieOptions = {
     title: {
       text: 'Gender',
-      subtext: 'FUck',
       left: 'center'
     },
     tooltip: {
@@ -331,6 +329,195 @@ export default connect (({json}) => ({
     }
   }
 
+
+  const getGenderPurchasePointData = () => {
+    const maleResult = []
+    const femaleResult = []
+    const nameClass = {}
+    data.forEach((i) => {
+      const index = i.User_ID
+      if(nameClass[index] == undefined){
+        nameClass[index] = {
+          Occupation : Number(i.Occupation),
+          Gender: i.Gender,
+          Purchase: Number(i.Purchase),
+        } 
+      }else{
+        nameClass[index].Purchase += Number(i.Purchase)
+      }
+    })
+    for(const i in nameClass){
+      const x = nameClass[i]
+      if(x.Gender == "M"){
+        maleResult.push([x.Occupation, x.Purchase / 100000])
+      }else{
+        femaleResult.push([x.Occupation, x.Purchase / 100000])
+      }
+    }
+    return [maleResult, femaleResult]
+  }
+
+  const GenderPurchasePointOptions = () => {
+    const result = getGenderPurchasePointData()
+    return {
+      title:{
+        text: 'Distribution of shopping value for men and women'
+      },
+      grid:{
+        top: "10%",
+        left: '3%',
+        right: '7%',       
+        bottom: '7%',
+        containLabel: true,
+        height: "1200px",
+      },
+      tooltip:{
+        showDelay:0,
+        formatter: function(params){
+          if(params.value.length > 1){
+            return params.seriesName + ':<br/>'
+            + params.value[0] + ' '
+            + params.value[1] + ' '
+          }
+          else{
+            return params.seriesName + ' :<br/>'
+            + params.name + ' '
+            + params.value + ' '
+          }
+        },
+        axisPointer:{
+          show: true,
+          type: 'cross',
+          lineStyle:{
+            type: 'dashed',
+            width: 1
+          }
+        }
+      },
+      toolbox:{
+        feature:{
+          dataZoom:{},
+          brush:{
+            type: ['rect', 'polygon', 'clear']
+          }
+        }
+      },
+      brush: {
+      },
+      legend: {
+          data: ['Female', 'Male'],
+          left: 'center',
+          bottom: 10
+      },
+      xAxis: [
+          {
+              type: 'value',
+              scale: true,
+              axisLabel: {
+                  formatter: '{value} '
+              },
+              splitLine: {
+                  show: false
+              }
+          }
+      ],
+      yAxis: [
+          {
+              type: 'value',
+              scale: true,
+              axisLabel: {
+                  formatter: '{value} '
+              },
+              splitLine: {
+                  show: false
+              },
+              max: 50
+          }
+      ],
+      series: [
+        {
+            name: 'Female',
+            type: 'scatter',
+            emphasis: {
+                focus: 'series'
+            },
+            data: result[1],
+            markArea: {
+                silent: true,
+                itemStyle: {
+                    color: 'transparent',
+                    borderWidth: 1,
+                    borderType: 'dashed'
+                },
+                data: [[{
+                    name: 'Female Data Range',
+                    xAxis: 'min',
+                    yAxis: 'min'
+                }, {
+                    xAxis: 'max',
+                    yAxis: 'max'
+                }]]
+            },
+            markPoint: {
+                data: [
+                    {type: 'max', name: 'Max'},
+                    {type: 'min', name: 'Min'}
+                ]
+            },
+            markLine: {
+                lineStyle: {
+                    type: 'solid'
+                },
+                data: [
+                    {type: 'average', name: '平均值'},
+                    { xAxis: 160 }
+                ]
+            }
+        },
+        {
+            name: 'Male',
+            type: 'scatter',
+            emphasis: {
+                focus: 'series'
+            },
+            data: result[0],
+            markArea: {
+                silent: true,
+                itemStyle: {
+                    color: 'transparent',
+                    borderWidth: 1,
+                    borderType: 'dashed'
+                },
+                data: [[{
+                    name: 'Male Data Range',
+                    xAxis: 'min',
+                    yAxis: 'min'
+                }, {
+                    xAxis: 'max',
+                    yAxis: 'max'
+                }]]
+            },
+            markPoint: {
+                data: [
+                    {type: 'max', name: 'Max'},
+                    {type: 'min', name: 'Min'}
+                ]
+            },
+            markLine: {
+                lineStyle: {
+                    type: 'solid'
+                },
+                data: [
+                    {type: 'average', name: 'Average'},
+                    { xAxis: 170 }
+                ]
+            }
+        }
+    ]
+    }
+  }
+
+
   return (
     <PageContainer content="这是一个新页面，从这里进行开发！" className = {styles.main}>
       <Row>
@@ -356,7 +543,9 @@ export default connect (({json}) => ({
             />
           </Card>
         </Col>
-        <Col>
+      </Row>
+      <Row>
+      <Col>
           <Card className = {styles.pieCard}>
             <ReactEChartsCore
               echarts={echarts}
@@ -364,12 +553,6 @@ export default connect (({json}) => ({
               notMerge={true}
               lazyUpdate={true} 
             />
-          </Card>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <Card className = {styles.pieCard}>
           </Card>
         </Col>
         <Col>
@@ -382,7 +565,25 @@ export default connect (({json}) => ({
             />
           </Card>
         </Col>
-      </Row>
+        </Row>
+          <Card 
+            style={{
+              width: '1600px',
+              height: '1600px',
+            }}
+          >
+          <ReactEChartsCore
+              echarts={echarts}
+              option={GenderPurchasePointOptions()}
+              notMerge={true}
+              lazyUpdate={true} 
+              style={{
+                width: '1500px',
+                height: '1500px',
+              }}
+            />
+          </Card>
+           
     </PageContainer>
   );
 })
