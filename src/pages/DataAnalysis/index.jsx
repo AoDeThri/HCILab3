@@ -519,7 +519,7 @@ export default connect (({json}) => ({
 
 
   return (
-    <PageContainer content="这是一个新页面，从这里进行开发！" className = {styles.main}>
+    <PageContainer content="All charts are in this page." className = {styles.main}>
       <Row>
         <Col>
           <Card
